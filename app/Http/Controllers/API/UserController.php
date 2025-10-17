@@ -117,7 +117,7 @@ class UserController extends Controller
 
         $user->update($validatedData);
 
-        return new UserResource($user);
+        return;
     }
 
 
