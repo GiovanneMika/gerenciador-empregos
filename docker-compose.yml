@@ -1,0 +1,17 @@
+# /gerenciador-empregos-api/docker-compose.yml
+version: '3.8'
+
+services:
+  dev-env:
+    build: . # Constrói usando o Dockerfile na pasta atual (gerenciador-empregos-api)
+    container_name: "job-dev-env"
+    working_dir: /app
+    volumes:
+      # Mapeia a pasta do back-end (a pasta atual '.') para /app/api dentro do container
+      - ./:/app/api
+      # Mapeia a pasta IRMÃ do front-end para /app/cliente dentro do container
+      - ../gerenciador-empregos-cliente:/app/cliente
+    ports:
+      - "8000:8000"
+      - "9090:9090"
+    command: tail -f /dev/null
