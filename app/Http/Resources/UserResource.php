@@ -14,10 +14,9 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // Aqui definimos EXATAMENTE o que vai no JSON de resposta.
+        // Retorna EXATAMENTE conforme o protocolo (SEM user_id)
         return [
-            'user_id' => $this->id, // Pega o ID do usuário
-            'name' => strtoupper($this->name), // Pega o nome e aplica a regra de MAIÚSCULO
+            'name' => $this->name, // Já está em MAIÚSCULO no banco
             'username' => $this->username,
             'email' => $this->email,
             'phone' => $this->phone,

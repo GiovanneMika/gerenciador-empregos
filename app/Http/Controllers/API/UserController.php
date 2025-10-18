@@ -16,11 +16,16 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        // Validação dos dados conforme o protocolo
+        // Verifica se username já existe ANTES da validação (para retornar 409 conforme protocolo)
+        if (User::where('username', $request->username)->exists()) {
+            return response()->json(['message' => 'Username already exists'], 409);
+        }
+
+        // Validação dos dados conforme o protocolo (sem unique no username)
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:4|max:150',
-            'username' => 'required|string|min:3|max:20|unique:users,username|regex:/^[a-zA-Z0-9_]+$/',
-            'password' => 'required|string|min:3|max:20|regex:/^[a-zA-Z0-9_]+$/',
+            'username' => 'required|string|min:3|max:20|regex:/^[a-zA-Z0-9]+$/',
+            'password' => 'required|string|min:3|max:20|regex:/^[a-zA-Z0-9]+$/', // password SEM underscore (só alfanumérico)
             'email' => 'sometimes|nullable|email',
             'phone' => 'sometimes|nullable|string|min:10|max:14|regex:/^[0-9]+$/',
             'experience' => 'sometimes|nullable|string|min:10|max:600',
@@ -28,8 +33,15 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            // A customização do erro 422 faremos no Passo 4
-            return response()->json($validator->errors(), 422);
+            $details = [];
+            foreach ($validator->errors()->messages() as $field => $errors) {
+                $details[] = ['field' => $field, 'error' => $errors[0]];
+            }
+            return response()->json([
+                'message' => 'Validation error',
+                'code' => 'UNPROCESSABLE',
+                'details' => $details
+            ], 422);
         }
 
         User::create([
@@ -50,8 +62,12 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        // Verifica a permissão usando a UserPolicy que criamos
-        $this->authorize('view', $user);
+        // Verifica a permissão usando a UserPolicy
+        try {
+            $this->authorize('view', $user);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
         return new UserResource($user);
     }
@@ -67,15 +83,12 @@ class UserController extends Controller
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
+        // Nota: o Laravel já retorna 404 automaticamente se o usuário não existir (Route Model Binding)
 
         // Validação (note o 'sometimes' para campos opcionais)
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|min:4|max:150',
-            'password' => 'sometimes|required|string|min:3|max:20|regex:/^[a-zA-Z0-9_]+$/',
+            'password' => 'sometimes|required|string|min:3|max:20|regex:/^[a-zA-Z0-9]+$/', // password SEM underscore
             'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
             'phone' => 'sometimes|nullable|string|min:10|max:14|regex:/^[0-9]+$/',
             'experience' => 'sometimes|nullable|string|min:10|max:600',
@@ -117,7 +130,7 @@ class UserController extends Controller
 
         $user->update($validatedData);
 
-        return;
+        return response()->json(['message' => 'User updated successfully'], 200);
     }
 
 
@@ -127,10 +140,14 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         // Verifica a permissão
-        $this->authorize('delete', $user);
+        try {
+            $this->authorize('delete', $user);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
         $user->delete();
 
-        return response()->json(['message' => 'User deleted successfully']);
+        return response()->json(['message' => 'User deleted successfully'], 200);
     }
 }

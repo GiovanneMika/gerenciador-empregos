@@ -39,15 +39,25 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
             }
         );
+        // Tratamento de exceções JWT conforme protocolo
         $exceptions->renderable(function (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e, $request) {
-            return response()->json(['message' => 'Invalid token'], 401);
+            return response()->json(['message' => 'Invalid Token'], 401);
         });
 
         $exceptions->renderable(function (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e, $request) {
-            return response()->json(['message' => 'Token expired'], 401);
+            return response()->json(['message' => 'Invalid Token'], 401); // Token expirado é considerado inválido
         });
 
         $exceptions->renderable(function (\Tymon\JWTAuth\Exceptions\JWTException $e, $request) {
-            return response()->json(['message' => 'Token not provided'], 401);
+            return response()->json(['message' => 'Invalid Token'], 401);
+        });
+
+        // Customiza erro 404 quando Model não é encontrado (ex: User não existe)
+        $exceptions->renderable(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, $request) {
+            // Verifica se é um User que não foi encontrado
+            if ($e->getModel() === 'App\\Models\\User') {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+            return response()->json(['message' => 'Resource not found'], 404);
         });
     })->create();
