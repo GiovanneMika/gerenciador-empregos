@@ -1,0 +1,253 @@
+================================================================================
+        INSTRUÇÕES DE SETUP - GERENCIADOR DE EMPREGOS API
+================================================================================
+
+Este documento contém todos os comandos necessários para rodar o projeto
+em um computador que acabou de baixar o repositório.
+
+================================================================================
+OPÇÃO 1: SETUP COM DOCKER (RECOMENDADO)
+================================================================================
+
+REQUISITOS:
+- Docker instalado
+- Docker Compose instalado
+
+PASSO A PASSO:
+
+1. Clone o repositório (se ainda não tiver):
+   git clone <url-do-repositorio>
+   cd gerenciador-empregos
+
+2. Configure o arquivo .env:
+   - No Windows PowerShell:
+     Copy-Item .env.example .env
+   
+   - No Linux/Mac:
+     cp .env.example .env
+
+3. Ajuste o caminho do banco de dados no .env:
+   - Abra o arquivo .env
+   - Localize a linha DB_DATABASE
+   - Certifique-se que está assim:
+     DB_DATABASE=/var/www/database/database.sqlite
+
+4. Crie o arquivo do banco de dados SQLite:
+   - No Windows PowerShell:
+     New-Item -ItemType File -Path database\database.sqlite -Force
+   
+   - No Linux/Mac:
+     touch database/database.sqlite
+
+5. Build e inicie os containers Docker:
+   docker-compose up -d --build
+
+6. Verifique se o container está rodando:
+   docker-compose ps
+
+7. Acesse a API:
+   http://localhost:8000
+
+COMANDOS ÚTEIS DO DOCKER:
+
+- Parar os containers:
+  docker-compose down
+
+- Ver logs em tempo real:
+  docker-compose logs -f app
+
+- Reiniciar os containers:
+  docker-compose restart
+
+- Executar comandos artisan dentro do container:
+  docker-compose exec app php artisan <comando>
+
+- Entrar no shell do container:
+  docker-compose exec app bash
+
+- Recriar banco de dados (limpar e rodar migrations novamente):
+  docker-compose exec app php artisan migrate:fresh
+
+- Ver status das migrations:
+  docker-compose exec app php artisan migrate:status
+
+================================================================================
+OPÇÃO 2: SETUP SEM DOCKER (MANUAL)
+================================================================================
+
+REQUISITOS:
+- PHP 8.2 ou superior
+- Composer
+- SQLite3
+- Git
+
+PASSO A PASSO:
+
+1. Clone o repositório (se ainda não tiver):
+   git clone <url-do-repositorio>
+   cd gerenciador-empregos
+
+2. Configure o arquivo .env:
+   - No Windows PowerShell:
+     Copy-Item .env.example .env
+   
+   - No Linux/Mac:
+     cp .env.example .env
+
+3. Ajuste o caminho do banco de dados no .env:
+   - Windows: Use caminho absoluto com barras invertidas
+     DB_DATABASE=C:\Users\SeuUsuario\caminho\para\gerenciador-empregos\database\database.sqlite
+   
+   - Linux/Mac: Use caminho absoluto com barras normais
+     DB_DATABASE=/home/seuusuario/caminho/para/gerenciador-empregos/database/database.sqlite
+
+4. Crie o arquivo do banco de dados SQLite:
+   - No Windows PowerShell:
+     New-Item -ItemType File -Path database\database.sqlite -Force
+   
+   - No Linux/Mac:
+     touch database/database.sqlite
+
+5. Instale as dependências do Composer:
+   composer install
+
+6. Gere a chave da aplicação:
+   php artisan key:generate
+
+7. Execute as migrations:
+   php artisan migrate
+
+8. Inicie o servidor:
+   php artisan serve --host=0.0.0.0 --port=8000
+
+9. Acesse a API:
+   http://localhost:8000
+
+COMANDOS ÚTEIS (SEM DOCKER):
+
+- Parar o servidor:
+  Ctrl+C no terminal onde está rodando
+
+- Limpar cache de configuração:
+  php artisan config:clear
+
+- Ver rotas disponíveis:
+  php artisan route:list
+
+- Recriar banco de dados (limpar e rodar migrations novamente):
+  php artisan migrate:fresh
+
+- Ver status das migrations:
+  php artisan migrate:status
+
+- Criar um usuário de teste via tinker:
+  php artisan tinker
+  User::create(['name'=>'TESTE','username'=>'teste123','password'=>bcrypt('senha123'),'role'=>'admin']);
+  exit
+
+================================================================================
+TESTANDO A API
+================================================================================
+
+Após iniciar o servidor (Docker ou manual), você pode testar com:
+
+1. Criar usuário (POST http://localhost:8000/users):
+   curl -X POST http://localhost:8000/users \
+     -H "Content-Type: application/json" \
+     -d "{\"name\":\"JOAO SILVA\",\"username\":\"joao_silva\",\"password\":\"senha123\",\"role\":\"user\"}"
+
+2. Login (POST http://localhost:8000/login):
+   curl -X POST http://localhost:8000/login \
+     -H "Content-Type: application/json" \
+     -d "{\"username\":\"joao_silva\",\"password\":\"senha123\"}"
+
+   Guarde o token retornado!
+
+3. Buscar usuário (GET http://localhost:8000/users/{id}):
+   curl -X GET http://localhost:8000/users/1 \
+     -H "Authorization: Bearer SEU_TOKEN_AQUI"
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+PROBLEMA: Erro "database is locked"
+SOLUÇÃO: 
+- Com Docker: Reinicie o container com docker-compose restart
+- Sem Docker: Feche todas as conexões com o banco e reinicie o servidor
+
+PROBLEMA: Erro "SQLSTATE[HY000]: General error: 8 attempt to write a readonly database"
+SOLUÇÃO:
+- Verifique as permissões do arquivo database.sqlite
+- Com Docker: docker-compose exec app chmod 664 /var/www/database/database.sqlite
+- Sem Docker (Linux): chmod 664 database/database.sqlite
+- Sem Docker (Windows): Clique direito no arquivo > Propriedades > Desmarque "Somente leitura"
+
+PROBLEMA: Porta 8000 já está em uso
+SOLUÇÃO:
+- Com Docker: Edite docker-compose.yml e mude "8000:8000" para "8001:8000"
+- Sem Docker: Use php artisan serve --port=8001
+
+PROBLEMA: Erro "Class 'JWT' not found"
+SOLUÇÃO: Execute composer dump-autoload
+
+PROBLEMA: Migrations não encontradas
+SOLUÇÃO: 
+- Verifique se a pasta database/migrations existe
+- Execute: php artisan migrate:status
+
+================================================================================
+INFORMAÇÕES ADICIONAIS
+================================================================================
+
+DOCUMENTAÇÃO COMPLETA DA API:
+Consulte o arquivo API_DOCUMENTATION.md para detalhes sobre todos os endpoints,
+formatos de requisição/resposta, códigos de erro, validações, etc.
+
+BANCO DE DADOS:
+- Tipo: SQLite (arquivo database/database.sqlite)
+- Migrations estão em: database/migrations/
+- Factories estão em: database/factories/
+
+AUTENTICAÇÃO:
+- JWT com expiração de 60 minutos
+- Claims customizados: sub, username, role, exp
+- Algoritmo: HS256
+
+CORS:
+- Configurado para aceitar todas as origens (*)
+- Para produção, restrinja em config/cors.php
+
+LOGS:
+- Laravel logs: storage/logs/laravel.log
+- Com Docker: docker-compose logs -f app
+
+ESTRUTURA DE ROTAS:
+- Sem prefixo /api (direto na raiz)
+- POST /users - Criar usuário
+- POST /login - Login
+- POST /logout - Logout (requer autenticação)
+- GET /users/{id} - Buscar usuário (requer autenticação)
+- PATCH /users/{id} - Atualizar usuário (requer autenticação + autorização)
+- DELETE /users/{id} - Deletar usuário (requer autenticação + autorização)
+
+================================================================================
+COMANDOS RESUMIDOS
+================================================================================
+
+DOCKER (3 comandos principais):
+1. Copy-Item .env.example .env  # Ou cp no Linux
+2. New-Item -ItemType File -Path database\database.sqlite  # Ou touch no Linux
+3. docker-compose up -d --build
+
+MANUAL (5 comandos principais):
+1. Copy-Item .env.example .env  # Ou cp no Linux
+2. New-Item -ItemType File -Path database\database.sqlite  # Ou touch no Linux
+3. composer install
+4. php artisan key:generate
+5. php artisan migrate
+6. php artisan serve --host=0.0.0.0 --port=8000
+
+================================================================================
+FIM DAS INSTRUÇÕES
+================================================================================
