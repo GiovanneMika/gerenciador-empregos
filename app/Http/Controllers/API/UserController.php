@@ -89,7 +89,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|min:4|max:150',
             'password' => 'sometimes|required|string|min:3|max:20|regex:/^[a-zA-Z0-9]+$/', // password SEM underscore
-            'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
+            'email' => 'sometimes|nullable|email',
             'phone' => 'sometimes|nullable|string|min:10|max:14|regex:/^[0-9]+$/',
             'experience' => 'sometimes|nullable|string|min:10|max:600',
             'education' => 'sometimes|nullable|string|min:10|max:600',

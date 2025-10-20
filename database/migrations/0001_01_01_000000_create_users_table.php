@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('username')->unique(); // Adicionado e definido como único
-            $table->string('email')->unique()->nullable(); // Editado para ser opcional
+            $table->string('email')->nullable(); // Editado para ser opcional
             $table->string('password');
             $table->string('phone')->nullable();
             $table->text('experience')->nullable();
