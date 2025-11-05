@@ -42,7 +42,7 @@ return [
         ],
         'api' => [
             'driver' => 'jwt',
-            'provider' => 'users',
+            'provider' => 'multi_model',
         ],
     ],
 
@@ -67,6 +67,9 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'multi_model' => [
+            'driver' => 'multi_model',
         ],
 
         // 'users' => [

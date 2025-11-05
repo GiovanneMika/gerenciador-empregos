@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request; // <-- Importe a classe Request
 use Illuminate\Validation\ValidationException; // <-- Importe a classe ValidationException
+use Illuminate\Auth\AuthenticationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -50,6 +51,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->renderable(function (\Tymon\JWTAuth\Exceptions\JWTException $e, $request) {
             return response()->json(['message' => 'Invalid Token'], 401);
+        });
+
+        // Tratamento de AuthenticationException (evita redirect para /login)
+        $exceptions->renderable(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson() || $request->is('*')) {
+                return response()->json(['message' => 'Invalid Token'], 401);
+            }
         });
 
         // Customiza erro 404 quando Model não é encontrado (ex: User não existe)
