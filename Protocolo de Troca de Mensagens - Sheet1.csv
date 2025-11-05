@@ -1,0 +1,1065 @@
+,Protocolo de Troca de Mensagens,,VALIDAR TODOS OS PROTOCOLOS COM A TURMA,,,,,,,,
+,,,,,,,,,,,
+JWT Padrão – Autenticação,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,,,,,
+OPERAÇÃO,C ⇒ S,Header HTTP obrigatório: Authorization: Bearer <jwt>,"Algoritmo: HS256
+
+Token deve conter os seguintes claims obrigatórios:
+
+sub → ID do usuário/empresa
+// O ID será o identificador único de cada usuário (user_id)
+// O ID será o identificador único de cada empresa (company_id)
+
+username → username único
+
+role → ""user"" ou ""company""
+
+exp → timestamp de expiração (UTC)
+
+Todas as rotas autenticadas devem validar o JWT.
+
+401 → quando o token é inválido, ausente ou expirado.
+
+403 → quando o token é válido, mas a ação não é permitida pelo role ou não pertence ao recurso.","{
+  ""sub"": ""1"",
+  ""username"": ""madeirinho2"",
+  ""role"": ""company"",
+  ""exp"": 1767099540
+}
+","Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+",,,,,,
+SUCESSO (200),S => C,,O endpoint acessado retorna o resultado normal da operação.,,,,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",inválido/ausente/expirado,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid credentials""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",sem permissão,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+,,,,,,,,,,,
+Login,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C => S,"body: username, password","
+","{
+  ""username"": string,
+  ""password"": string
+}","{
+  ""username"": ""user1"",
+  ""password"": ""pass123""
+}",/login,POST,,,,                                                                                                                                                                 
+SUCESSO (200),S => C,"(header) status code
+(body) token, expires in",Padrão do token: JWT,"Status code: 200
+
+{
+  ""token"": ""<jwt>"",
+  ""expires_in"": int
+}
+","{
+  ""token"": ""<jwt>"",
+  ""expires_in"": 3600
+}
+",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",,"{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid credentials""
+}",,,,,,
+,,,,,,,,,,,
+Logout,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C => S,"headers: ""token"": ""<jwt>"",","Padrão do token: JWT, auth obrigatório",Authorization: Bearer <jwt>,,/logout,POST,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) message",,"Status code: 200
+{ 
+   ""message"": string 
+}
+","{
+  ""message"": ""OK"" 
+}
+",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid Token""
+}",,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+Cadastro de Empresa,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"
+body: 
+    - Nome, 
+    - Ramo, 
+    - Rua, 
+    - Numero, 
+    - Cidade,
+    - Estado, 
+    - Telefone, 
+    - Email,
+    - Usuario,
+    - Senha","
+Todos os campos são obrigatórios.
+Role= company
+
+Name: (Obrigatório)
+    - Unique
+    - Min: 4 Caracteres;
+    - Max: 150 Caracteres;
+
+Business: (Obrigatório)
+    - Min: 4
+    - Max: 150
+
+Username: (Obrigatório)
+    - Unique;
+    - Min: 3 Caracteres;
+    - Max: 20 caracteres;
+    - Sem caracteres especiais;
+    - Sem espaços em branco;
+
+Password: (Obrigatório)
+    - Min: 3 Caracteres;
+    - Max: 20 caracteres;
+    - Sem caracteres especiais;
+    - Sem espaços em branco;
+
+Street: (Obrigatório)
+    - Min: 3 Caracteres;
+    - Max: 150 Caracteres;
+
+Number: (Obrigatório)
+    - Min: 1 Caractere;
+    - Max: 8 Caracteres;
+    - Precisa ser um número válido, inteiro, positivo
+
+City: (Obrigatório)
+    - Min: 3 Caracteres;
+    - Max: 150 Caracteres;
+
+State: (Obrigatório)
+    - Precisa ser um estado válido;
+
+Phone: (Obrigatório)
+    - Min: 10 Dígitos (numero de telefone fixo sem máscara) nao colocar +55 
+          * Ex: 4230303030
+    - Max: 14 Dígitos
+
+E-mail: (Obrigatório)
+    - Min: 10 Caracteres;
+    - Max: 150 Caracteres;
+    - Precisa ser um endereço de e-mail válido;
+","{
+  ""name"": string,
+  ""business"": string (Ramo)
+  ""username"": string
+  ""password"": string,
+  ""street"": string,
+  ""number"": string,
+  ""city"": string,
+  ""state"": string,
+  ""phone"": string,
+  ""email"": string
+}","{
+  ""name"": ""Madero"",
+  ""business"": ""Comida""
+  ""username"": ""madeirinho2""
+  ""password"": ""senha"",
+  ""street"": ""Marquês de Maricá"",
+  ""number"": ""1328"",
+  ""city"": ""Ponta Grossa"",
+  ""state"": ""PR"",
+  ""phone"": ""42995443534"",
+  ""email"": ""madeirinho2@madeiro.com""
+}",/companies,POST,,,,
+SUCESSO (201),S => C,"(header) status code
+(body) message",,"Status code: 201
+{ 
+   ""message"": string 
+}
+","{
+  ""message"": ""Created""
+}
+",,,,,,
+ERRO (409),S => C,"(header) status code, 
+(body) message",,"Status: 409
+{  
+   ""message"": string
+}","{
+ ""message"": ""Company name already exists""
+}",,,,,,
+ERRO (409),S => C,"(header) status code, 
+(body) message",,"Status: 409
+{  
+   ""message"": string
+}","{
+ ""message"": ""Username already exists""
+}",,,,,,
+ERRO (422),S => C,"(header) status code, 
+(body) message",,"Status code: 422
+{  
+   ""message"": string
+}","{
+  ""message"": ""Validation error"",
+  ""code"": ""UNPROCESSABLE"",
+  ""details"": [
+    { ""field"": ""email"", ""error"": ""invalid_format"" },
+    { ""field"": ""number"", ""error"": ""must_be_positive_int"" }
+  ]
+}",,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+Read = Ler dados da Empresa,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",","Padrão do token: JWT, auth obrigatório
+Apenas a própria empresa pode ver seus dados",Authorization: Bearer <jwt>,,/companies/{company_id},GET,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) name, business, username, street, number, city, state, phone, email",,"Status: 200
+{
+  ""name"": string,
+  ""business"": string (Ramo)
+  ""username"": string
+  ""street"": string,
+  ""number"": string,
+  ""city"": string,
+  ""state"": string,
+  ""phone"": string,
+  ""email"": string
+}","{
+  ""name"": ""MADERO"",
+  ""business"": ""Comida""
+  ""username"": ""madeirinho2"",
+  ""street"": ""Marquês de Maricá"",
+  ""number"": ""1328"",
+  ""city"": ""Ponta Grossa"",
+  ""state"": ""PR"",
+  ""phone"": ""42995443534"",
+  ""email"": ""madeirinho2@madeiro.com""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando ler outra empresa,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Empresa não encontrada,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Company not found""
+}",,,,,,
+,,,,,,,,,,,
+Update = Editar empresa (apenas a empresa pode se editar),,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",
+
+body: name,email, phone, street, number, city, state, business, password, ","JWT obrigatório no header (Authorization: Bearer <jwt>)
+
+Somente a própria empresa
+
+Somente role=company
+
+username não pode ser editado.
+
+Mesmas restrições do cadastro de empresa","Authorization: Bearer <jwt>
+{
+  ""name"": string,
+  ""email"": string,
+  ""phone"": string,
+  ""street"": string,
+  ""number"": string,
+  ""city"": string,
+  ""state"": string,
+  ""business"":string,
+  ""password"":string
+}","{
+  ""name"": ""EMPRESA""
+  ""email"": ""novo@empresa.com"",
+  ""phone"": ""42999998888"",
+  ""street"": ""Nova Rua"",
+  ""number"": ""100"",
+  ""city"": ""Ponta Grossa"",
+  ""state"": ""PR"",
+  ""business"":""varejo"",
+  ""password"":""1234""
+}",/companies/{company_id},PATCH,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) message",,"Status: 200
+{
+  ""message"": string
+}","{
+  ""message"": ""Updated""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando editar outra empresa,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Empresa não encontrada,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Company not found""
+}",,,,,,
+ERRO (422),S => C,"(header) status code, 
+(body) message, code, details",Validação,"Status: 422
+{  
+   ""message"": string
+   ""code"": string
+   ""details"": [
+     {""field"": ""data"", ""error"": ""error message""},
+     ...
+   ]
+}","{
+  ""message"": ""Validation error"",
+  ""code"": ""UNPROCESSABLE"",
+  ""details"": [
+    { ""field"": ""email"", ""error"": ""invalid_format"" },
+    { ""field"": ""number"", ""error"": ""must_be_positive_int"" }
+  ]
+}",,,,,,
+,,,,,,,,,,,
+"Delete = Deletar empresa (apenas a empresa pode se deletar)
+",,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",","JWT obrigatório (Authorization: Bearer <jwt>)
+
+Apenas role = company
+
+Apenas a própria empresa pode deletar sua conta
+
+Ao deletar, todas as vagas da empresa devem ser removidas em cascata
+
+Ao deletar, não se pode ter vagas ativas",Authorization: Bearer <jwt>,,/companies/{company_id},DELETE,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) message",,"Status: 200
+{
+  ""message"": string
+}","{
+  ""message"": ""Company deleted successfully""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando deletar outra empresa,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Empresa não encontrada,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Company not found""
+}",,,,,,
+ERRO (409),S => C,"(header) status code, 
+(body) message",empresa com vagas ativas,"Status: 409
+{  
+   ""message"": string
+}","{
+  ""message"": ""Cannot delete company with active jobs""
+}",,,,,,
+,,,,,,,,,,,
+CRUD USUARIO,,,,,,,,,,,
+,,,,,,,,,,,
+Cadastro do usuario comum,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"body: Name, Username, Password, Email (opcional), Phone (opcional),Experience(opcional),Education(opcional)","Sem auth (cadastro público)
+
+username deve ser único no sistema.
+
+name (string, 4–150; será ARMAZENADO em MAIÚSCULO) (Obrigatório)
+
+username (string, único, 3–20, sem espaços, sem caracter especial) (Obrigatório)
+
+password (string, 3–20, sem espaços, sem caracter especial) (Obrigatório)
+
+email (string, válido) — opcional
+
+phone (string, 10–14 dígitos) — opcional
+
+experience(string 10-600) --- opcional
+
+education(string 10-600) -- opcional
+","{
+  ""name"": string,
+  ""username"": string,
+  ""password"": string,
+  ""email"": string,
+  ""phone"": string,
+  ""experience"":string,
+  ""education"":string
+}","{
+  ""name"": ""João da Silva"",
+  ""username"": ""joao123"",
+  ""password"": ""minhasenha"",
+  ""email"": ""joao@example.com"",
+  ""phone"": ""42999998888"",
+  ""experience"":""2 anos de suporte técnico, 3 anos de desenvolvedor"",
+  ""education"":""Superior em ADS""
+}",/users,POST,,,,
+SUCESSO (201),S => C,"(header) status code
+(body) message",,"Status: 201
+{
+  ""message"": string
+}","{
+  ""message"": ""Created""
+}",,,,,,
+ERRO (409),S => C,"(header) status code, 
+(body) message",,"Status: 409
+{  
+   ""message"": string
+}","{
+ ""message"": ""Username already exists""
+}",,,,,,
+ERRO (422),S => C,"(header) status code, 
+(body) message, code, details",Validação,"Status: 422
+{  
+   ""message"": string
+   ""code"": string
+   ""details"": [
+     {""field"": ""data"", ""error"": ""error message""},
+     ...
+   ]
+}","{
+  ""message"": ""Validation error"",
+  ""code"": ""UNPROCESSABLE"",
+  ""details"": [
+    { ""field"": ""username"", ""error"": ""invalid_format"" },
+    { ""field"": ""password"", ""error"": ""too_short"" }
+  ]
+}",,,,,,
+,,,,,,,,,,,
+Read = Ler dados do usuario,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",","JWT obrigatório no header (Authorization: Bearer <jwt>)
+
+Apenas o próprio usuário pode ver seus dados",Authorization: Bearer <jwt>,,/users/{user_id},GET,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) name, username, email, phone,experience,education",,"Status: 200
+{
+  ""name"": string,
+  ""username"":string,
+  ""email"": string,
+  ""phone"":string,
+  ""experience"":string,
+  ""education"":string
+}","{
+  ""name"": ""JOÃO DA SILVA"",
+  ""username"": ""joao123"",
+  ""email"": ""joao@example.com"",
+  ""phone"": ""42999998888"",
+  ""experience"":""2 anos em suporte técnico"",
+  ""education"":""Superior em ADS""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando ler outro usuário,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Usuário não encontrado,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""User not found""
+}",,,,,,
+,,,,,,,,,,,
+Update = Editar usuario (apenas o usuario pode se editar),,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",
+
+body: name, email, password, phone,experience, education","JWT obrigatório (Authorization: Bearer <jwt>)
+
+Apenas o próprio usuário pode editar
+
+username não pode ser alterado.
+
+email (string - email válido) (Opcional)
+
+name (string - Segue as mesmas regras de validação do cadastro)
+
+password (string - Segue as mesmas regras de validação do cadastro)
+
+phone (string, 10–14 dígitos)
+
+experience e education seguem as mesmas regras de validação do cadastro
+
+// Vale a menção de que todos os campos que forem enviados como
+// vazio ("""") (exceto pelos que não podem ser alterados, e os campos de name e password), estes valores 
+// serão substituídos por NULL ou """" no banco de dados.","{
+  ""email"": string,
+  ""phone"": string,
+  ""name"": string,
+  ""password"": string,
+  ""experience"":string,
+  ""education"":string
+}
+","{
+  ""email"": ""novoemail@example.com"",
+  ""phone"": ""42999997777"",
+  ""name"": ""New Name"",
+  ""password"": ""newPassword121"",
+  ""experience"":""2 anos em desenvolvimento de software"",
+  ""education"":""Superior em BCC""
+}
+",/users/{user_id},PATCH,,,,
+SUCESSO (200),S => C,,,,,,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando editar outro usuário,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Usuário não encontrado,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""User not found""
+}",,,,,,
+ERRO (422),S => C,"(header) status code, 
+(body) message, code, details",Validação,"Status: 422
+{  
+   ""message"": string
+   ""code"": string
+   ""details"": [
+     {""field"": ""data"", ""error"": ""error message""},
+     ...
+   ]
+}","{
+  ""message"": ""Validation error"",
+  ""code"": ""UNPROCESSABLE"",
+  ""details"": [
+    { ""field"": ""email"", ""error"": ""invalid_format"" },
+  ]
+}",,,,,,
+,,,,,,,,,,,
+"Delete = Deletar usuario (apenas o usuario pode se deletar)
+",,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",","JWT obrigatório (Authorization: Bearer <jwt>)
+
+Apenas o próprio usuário pode deletar sua conta",Authorization: Bearer <jwt>,,/users/{user_id},DELETE,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) message",,"Status: 200
+{
+  ""message"": string
+}","{
+  ""message"": ""User deleted successfully""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando deletar outro usuário,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Usuário não encontrado,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""User not found""
+}",,,,,,
+,,,,,,,,,,,
+CRUD VAGAS,,,,,,,,,,,
+,,,,,,,,,,,
+Cadastro de vaga,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",
+
+body:  title, area, description, location, contact, salary","JWT obrigatório (Authorization: Bearer <jwt>)
+
+Somente empresa (token com role = ""company"") pode criar
+
+Vaga fica vinculada à empresa do token
+
+Company_id fica vinculado a vaga
+
+title (string, 3–150) (Obrigatório)
+
+area (string, ex.: ""Produção"",  Temos que definir uma lista com diferentes areas para padronização.) (Obrigatório)
+
+description (string, 10–5000) (Obrigatório)
+
+location (string) (Obrigatório)
+
+salary (objeto opcional): (numeric, valor >0)","Authorization: Bearer <jwt>)
+
+{
+  ""title"": string,
+  ""area"":string,
+  ""description"": string,
+  ""location"": string,
+  ""contact"": string,
+  ""salary"": numeric
+}
+","{
+  ""title"": ""Auxiliar de Produção"",
+  ""area"": ""Produção"",
+  ""description"": ""Auxilia na linha de produção, organização e conferência."",
+  ""location"": ""Ponta Grossa/PR"",
+  ""salary"": 1800.00
+}
+",/jobs,POST,,,,
+SUCESSO (201),S => C,"(header) status code
+(body) message",,"Status: 201
+{
+  ""message"": string
+}","{
+  ""message"": ""Created""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Token não é de empresa,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (422),S => C,"(header) status code, 
+(body) message, code, details",Validação,"Status: 422
+{  
+   ""message"": string
+   ""code"": string
+   ""details"": [
+     {""field"": ""data"", ""error"": ""error message""},
+     ...
+   ]
+}","{
+  ""message"": ""Validation error"",
+  ""code"": ""UNPROCESSABLE"",
+  ""details"": [
+    { ""field"": ""title"", ""error"": ""too_short"" },
+    { ""field"": ""salary"", ""error"": ""must_be_number"" }
+  ]
+}",,,,,,
+,,,,,,,,,,,
+Read = Ler dados da vaga,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",
+
+body: job_id",Usuários logados podem ler os dados da vaga,,,/jobs/{job_id},GET,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) job_id, token, title,area, description,company, location, salary",,"Status: 200
+{
+  ""job_id"": ínt,
+  ""token"": ""<jwt>"",
+  ""title"": string,
+  ""area"":string,
+  ""description"":string,
+  ""company"": string,
+  ""location"":string,
+  ""salary"": numeric
+}
+","{
+  ""job_id"": 12,
+  ""title"": ""Auxiliar de Produção"",
+  ""area"": ""Produção"",
+  ""description"": ""Auxilia na linha de produção, organização e conferência."",
+  ""company"": ""Castrolanda"",
+  ""location"": ""Ponta Grossa/PR"",
+  ""salary"":1800.00
+}
+",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Vaga não existe,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Job not found""
+}",,,,,,
+,,,,,,,,,,,
+Read = Ler todas as vagas,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",
+
+body: title, area, company, description, location, salary_range",Usuários logados podem ler os dados das vagas,"{
+         ""filters"": [ // Filtros opcionais. Caso todos vazios -> Retornar todas as vagas
+              { 
+                   ""title"": string,
+                   ""area"":string,
+                   ""company"":string,
+                   ""description"":string,
+                   ""location"":string,
+                   ""salary_range"": { ""min"":numeric, ""max"": numeric}
+              }
+         ],
+}","{
+         ""filters"": [
+              { 
+                   ""title"": ""Software Developer"",
+                   ""area"":""Applications and Software Development"",
+                   ""company"":""UTFPR"",
+                   ""description"":""Não entendi muito esse campo nos filtros."",
+                   ""location"":""Ponta Grossa, PR"",
+                   ""salary_range"": { ""min"":1513, ""max"": 2800}
+              }
+         ],
+}",/jobs,GET,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) job_id,title, area, company, description, location, salary, contact",, ,"Status: 200
+{
+     items: [
+         {
+          ""job_id"": 12,
+          ""title"": ""Auxiliar de Produção"",
+          ""area"": ""Produção"",
+          ""company"": ""Castrolanda"",
+          ""description"": ""Auxilia na linha de produção, organização e conferência."",
+          ""location"": ""Ponta Grossa/PR"",
+          ""salary"": 1897.32,
+          ""contact"": ""curriculos@castrolanda.com.br""
+         },
+         {
+          ""job_id"": 13,
+          ""title"": ""Atendente de Boteco"",
+          ""area"": ""Comunicação"",
+          ""company"": ""Bar 2 Zé"",
+          ""description"": ""Ser gentil com os clientes e incentivar o consumo."",
+          ""location"": ""Ponta Grossa/PR"",
+          ""salary"": 1513.00,
+          ""contact"": ""vagas@bar2ze.com.br""
+         },
+         ...
+    ]
+}
+",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Não há vagas,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Job not found""
+}",,,,,,
+,,,,,,,,,,,
+Read = Ler todas as vagas por empresa,,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",
+
+body: title, token, area, description, location, salary_range",Usuários logados podem ler os dados das vagas,"{
+         ""filters"": [ // Filtros opcionais. Caso todos vazios -> Retornar todas as vagas
+              { 
+                   ""title"": string,
+                   ""area"":string,
+                   ""description"":string,
+                   ""location"":string,
+                   ""salary_range"": { ""min"":numeric, ""max"": numeric}
+              }
+         ],
+}","{
+         ""filters"": [
+              { 
+                   ""title"": ""Software Developer"",
+                   ""area"":""Applications and Software Development"",
+                   ""description"":""Não entendi muito esse campo nos filtros."",
+                   ""location"":""Ponta Grossa, PR"",
+                   ""salary_range"": { ""min"":1513.00, ""max"": 2800.00}
+              }
+         ],
+}",/companies/{company_id}/jobs,GET,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) title, area, company, description, location, salary, contact",,"Status: 200
+{
+   ""items"": [
+         { 
+              ""job_id"": int,
+              ""title"": string,
+              ""area"":string,
+              ""company"": string,
+              ""description"":string,
+              ""location"":string,
+              ""salary"": numeric
+              ""contact"": string, // e-mail, telefone da empresa que está ofertando a vaga
+         },
+         { 
+              ""job_id"": int,
+              ""title"": string,
+              ""area"":string,
+              ""company"": string,
+              ""description"":string,
+              ""location"":string,
+              ""salary"": numeric
+              ""contact"": string, // e-mail, telefone da empresa que está ofertando a vaga
+         },
+         ...
+    ]
+}
+","Status: 200
+{
+     items: [
+         {
+          ""job_id"": 12,
+          ""title"": ""Auxiliar de Produção"",
+          ""area"": ""Produção"",
+          ""company"": ""Castrolanda"",
+          ""description"": ""Auxilia na linha de produção, organização e conferência."",
+          ""location"": ""Ponta Grossa/PR"",
+          ""salary"": 1897.32,
+          ""contact"": ""curriculos@castrolanda.com.br""
+         },
+         {
+          ""job_id"": 13,
+          ""title"": ""Atendente de Boteco"",
+          ""area"": ""Comunicação"",
+          ""company"": ""Bar 2 Zé"",
+          ""description"": ""Ser gentil com os clientes e incentivar o consumo."",
+          ""location"": ""Ponta Grossa/PR"",
+          ""salary"": 1513.00,
+          ""contact"": ""vagas@bar2ze.com.br""
+         },
+         ...
+    ]
+}
+",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Não é a empresa dona da vaga,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Vaga não encontrada,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Job not found""
+}",,,,,,
+ERRO (422),S => C,"(header) status code, 
+(body) message, code, details",Validação,"Status: 422
+{  
+   ""message"": string
+   ""code"": string
+   ""details"": [
+     {""field"": ""data"", ""error"": ""error message""},
+     ...
+   ]
+}","{
+  ""message"": ""Validation error"",
+  ""code"": ""UNPROCESSABLE"",
+  ""details"": [
+    { ""field"": ""title"", ""error"": ""too_short"" }
+  ]
+}
+",,,,,,
+ ,,,,,,,,,,,
+"Editar vaga (apenas a empresa que cadastrou a vaga pode editá-la)
+
+",,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Método HTTP,,,,
+OPERAÇÃO,C=>S,"headers: ""token"": ""<jwt>"",
+
+body:  title, area, description, location, contact, salary","JWT obrigatório (Authorization: Bearer <jwt>)
+
+Apenas role=company
+
+Apenas a empresa dona da vaga pode editar",Authorization: Bearer <jwt>,,/jobs/{job_id},PATCH,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) message",,"Status: 200
+{
+  ""message"": string
+}","{
+  ""message"": ""Job updated successfully""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando editar vaga de outra empresa,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Vaga não encontrada,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Job not found""
+}",,,,,,
+ERRO (422),S => C,"(header) status code, 
+(body) message, code, details",Validação,"Status: 422
+{  
+   ""message"": string
+   ""code"": string
+   ""details"": [
+     {""field"": ""data"", ""error"": ""error message""},
+     ...
+   ]
+}","{
+  ""message"": ""Validation error"",
+  ""code"": ""UNPROCESSABLE"",
+  ""details"": [
+    { ""field"": ""contact"", ""error"": ""invalid_format"" },
+  ]
+}",,,,,,
+,,,,,,,,,,,
+"Deletar vaga (apenas a empresa que cadastrou a vaga pode excluí-la)
+
+",,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,,"JWT obrigatório (Authorization: Bearer <jwt>)
+
+Apenas role=company
+
+Apenas a empresa dona da vaga pode deletar",Authorization: Bearer <jwt>,,/jobs/{job_id},DELETE,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) message",,"Status: 200
+{
+  ""message"": string
+}","{
+  ""message"": ""Job deleted successfully""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando deletar vaga de outra empresa,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Vaga não encontrada,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Job not found""
+}",,,,,,
+,,,,,,,,,,,
+"Aplicar a uma vaga (usuário comum)
+
+",,,,,,,,,,,
+Status,Direção,Dados,Restrições,Formato,Exemplo,Rota,Metodo HTTP,,,,
+OPERAÇÃO,C=>S,"headers: headers: ""token"": ""<jwt>"",
+
+body: 
+    Full Name (Obrigatório),
+    E-mail (opcional), 
+    Phone (opcional), 
+    Education (Obrigatório) - max: 4000, 
+    Experience (Obrigatório) max: 4000,
+    ","JWT obrigatório (Authorization: Bearer <jwt>)
+
+Apenas role=user
+",Authorization: Bearer <jwt>,"
+{ 
+     ""name"": string,
+     ""email"":string,
+     ""phone"":string,
+     ""education"":string,
+     ""experience"": string,
+ }
+",/jobs/{job_id},DELETE,,,,
+SUCESSO (200),S => C,"(header) status code
+(body) message",,"Status: 200
+{
+  ""message"": string
+}","{
+  ""message"": ""Applied succesfully""
+}",,,,,,
+ERRO (401),S => C,"(header) status code, 
+(body) message",Token inválido/ausente,"Status: 401
+{  
+   ""message"": string
+}","{
+  ""message"": ""Invalid token""
+}",,,,,,
+ERRO (403),S => C,"(header) status code, 
+(body) message",Tentando deletar vaga de outra empresa,"Status: 403
+{  
+   ""message"": string
+}","{
+  ""message"": ""Forbidden""
+}",,,,,,
+ERRO (404),S => C,"(header) status code, 
+(body) message",Vaga não encontrada,"Status: 404
+{  
+   ""message"": string
+}","{
+  ""message"": ""Job not found""
+}",,,,,,

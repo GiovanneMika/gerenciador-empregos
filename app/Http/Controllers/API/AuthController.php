@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Models\Company;
+use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -16,34 +20,56 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        // Tenta autenticar o usuário
-        if (!$token = auth('api')->attempt($credentials)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        $username = $credentials['username'];
+        $password = $credentials['password'];
+
+        // Primeiro tenta encontrar um usuário
+        $user = User::where('username', $username)->first();
+        if ($user && Hash::check($password, $user->password)) {
+            // Claims personalizadas para usuário
+            $customClaims = [
+                'sub' => $user->id,
+                'username' => $user->username,
+                'role' => 'user',
+                'exp' => now()->addMinutes(60)->timestamp
+            ];
+
+            // Gera token
+            $token = JWTAuth::claims($customClaims)->fromUser($user);
+
+            return response()->json([
+                'token' => $token,
+                'expires_in' => 3600 // 60 minutos
+            ]);
         }
 
-        // Pega usuário autenticado
-        $user = auth('api')->user();
+        // Se não achou usuário, tenta encontrar uma empresa
+        $company = Company::where('username', $username)->first();
+        if ($company && Hash::check($password, $company->password)) {
+            // Claims personalizadas para empresa
+            $customClaims = [
+                'sub' => $company->id,
+                'username' => $company->username,
+                'role' => 'company',
+                'exp' => now()->addMinutes(60)->timestamp
+            ];
 
-        // Claims personalizadas
-        $customClaims = [
-            'sub' => $user->id,           // ID do usuário
-            'username' => $user->username,
-            'role' => 'user',
-            'exp' => now()->addSeconds(auth('api')->factory()->getTTL() * 60)->timestamp
-        ];
+            // Gera token
+            $token = JWTAuth::claims($customClaims)->fromUser($company);
 
-        // Regerar token com os claims corretos
-        $token = auth('api')->claims($customClaims)->fromUser($user);
+            return response()->json([
+                'token' => $token,
+                'expires_in' => 3600 // 60 minutos
+            ]);
+        }
 
-        return response()->json([
-            'token' => $token,
-            'expires_in' => auth('api')->factory()->getTTL() * 60
-        ]);
+        // Se não achou nem usuário nem empresa
+        return response()->json(['message' => 'Invalid credentials'], 401);
     }
 
     public function logout()
     {
-        auth('api')->logout();
+        JWTAuth::invalidate(JWTAuth::getToken());
         return response()->json(['message' => 'OK']);
     }
 }
