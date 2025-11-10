@@ -105,6 +105,10 @@ class CompanyController extends Controller
             'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
         ];
 
+        if (Company::where('name', $request->name)->exists()) {
+            return response()->json(['message' => 'Company name already exists'], 409);
+        }
+
         // Verifica se a empresa está autenticada e se tem permissão
         try {
             $this->authorize('update', $company);

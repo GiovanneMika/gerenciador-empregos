@@ -4,6 +4,7 @@ namespace App\Auth;
 
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Company;
 
@@ -11,6 +12,9 @@ class MultiModelUserProvider implements UserProvider
 {
     public function retrieveById($identifier)
     {
+        // Garantir que o identifier seja inteiro
+        $identifier = (int) $identifier;
+        
         // Tenta buscar primeiro em User, depois em Company
         return User::find($identifier) ?? Company::find($identifier);
     }
@@ -40,7 +44,7 @@ class MultiModelUserProvider implements UserProvider
 
     public function validateCredentials(Authenticatable $user, array $credentials)
     {
-        return \Hash::check($credentials['password'], $user->password);
+        return Hash::check($credentials['password'], $user->getAuthPassword());
     }
 
     public function rehashPasswordIfRequired(Authenticatable $user, array $credentials, bool $force = false)
