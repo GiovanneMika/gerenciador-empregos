@@ -105,7 +105,8 @@ class CompanyController extends Controller
             'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
         ];
 
-        if (Company::where('name', $request->name)->exists()) {
+        // Verifica se o nome novo já existe em OUTRA empresa (excluindo a própria)
+        if ($request->has('name') && Company::where('name', $request->name)->where('id', '!=', $company->id)->exists()) {
             return response()->json(['message' => 'Company name already exists'], 409);
         }
 
