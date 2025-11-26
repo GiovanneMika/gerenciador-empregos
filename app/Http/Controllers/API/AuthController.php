@@ -31,7 +31,6 @@ class AuthController extends Controller
 
         // Claims personalizadas
         $customClaims = [
-            'sub' => $authenticatable->id,
             'username' => $authenticatable->username,
             'role' => $role,
         ];

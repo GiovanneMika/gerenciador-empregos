@@ -7,16 +7,20 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Company;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class MultiModelUserProvider implements UserProvider
 {
     public function retrieveById($identifier)
     {
-        // Garantir que o identifier seja inteiro
-        $identifier = (int) $identifier;
-        
-        // Tenta buscar primeiro em User, depois em Company
-        return User::find($identifier) ?? Company::find($identifier);
+        $id = (int) $identifier;
+        $role = $this->resolveRoleFromToken();
+
+        return match ($role) {
+            'company' => Company::find($id),
+            'user' => User::find($id),
+            default => User::find($id) ?? Company::find($id),
+        };
     }
 
     public function retrieveByToken($identifier, $token)
@@ -50,5 +54,14 @@ class MultiModelUserProvider implements UserProvider
     public function rehashPasswordIfRequired(Authenticatable $user, array $credentials, bool $force = false)
     {
         // Não necessário para este caso
+    }
+
+    private function resolveRoleFromToken(): ?string
+    {
+        try {
+            return JWTAuth::parseToken()->getPayload()->get('role');
+        } catch (\Throwable $exception) {
+            return null;
+        }
     }
 }
