@@ -67,6 +67,7 @@ class JobController extends Controller
         $data = $validator->validated();
         $data['state'] = strtoupper($data['state']);
         $data['company_id'] = $user->id;
+        $data['contact'] = $user->email; // Usa o email da empresa autenticada
 
         JobVacancy::create($data);
 
@@ -177,6 +178,7 @@ class JobController extends Controller
 
         $data = $validator->validated();
         $data['state'] = strtoupper($data['state']);
+        $data['contact'] = $user->email; // Usa o email atual da empresa
 
         $job->update($data);
 
@@ -382,7 +384,6 @@ class JobController extends Controller
             'description' => 'required|string|min:10|max:5000',
             'state' => ['required', 'string', Rule::in(self::STATE_CODES)],
             'city' => 'required|string|min:2|max:150',
-            'contact' => 'required|email|max:150',
             'salary' => 'nullable|numeric|gt:0',
         ];
     }
