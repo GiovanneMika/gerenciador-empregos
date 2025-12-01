@@ -44,11 +44,39 @@ class MonitorController extends Controller
     {
         $logPath = storage_path('logs/server_requests.log');
 
-        if (File::exists($logPath)) {
-            File::delete($logPath);
+        try {
+            if (File::exists($logPath)) {
+                File::put($logPath, '');
+            }
+            return response()->json(['message' => 'Logs cleared', 'success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to clear logs', 'success' => false], 500);
+        }
+    }
+
+    /**
+     * Retorna o hash do arquivo de logs para detectar mudanças
+     */
+    public function checkUpdates(): JsonResponse
+    {
+        $logPath = storage_path('logs/server_requests.log');
+        
+        if (!File::exists($logPath)) {
+            return response()->json([
+                'hash' => '0',
+                'size' => 0,
+                'last_modified' => 0,
+            ]);
         }
 
-        return response()->json(['message' => 'Logs cleared']);
+        $size = File::size($logPath);
+        $lastModified = File::lastModified($logPath);
+        
+        return response()->json([
+            'hash' => md5($size . $lastModified),
+            'size' => $size,
+            'last_modified' => $lastModified,
+        ]);
     }
 
     public function activeUsers(): JsonResponse

@@ -298,9 +298,8 @@
         <div class="header-actions">
             <div class="status-indicator">
                 <div class="status-dot"></div>
-                <span>Servidor Online</span>
+                <span>Live</span>
             </div>
-            <span class="refresh-indicator">Auto-refresh: <span id="countdown">5</span>s</span>
             <button class="btn btn-primary" onclick="refreshData()">🔄 Atualizar</button>
             <button class="btn btn-danger" onclick="clearLogs()">🗑️ Limpar Logs</button>
         </div>
@@ -365,8 +364,8 @@
     </div>
 
     <script>
-        let refreshInterval;
-        let countdown = 30;
+        let lastHash = '';
+        let checkInterval;
 
         function formatJson(obj) {
             if (!obj || Object.keys(obj).length === 0) return null;
@@ -500,27 +499,42 @@
             }
         }
 
+        async function checkForUpdates() {
+            try {
+                const res = await fetch('/monitor/check');
+                const data = await res.json();
+                
+                if (data.hash !== lastHash) {
+                    lastHash = data.hash;
+                    refreshData();
+                }
+            } catch (err) {
+                console.error('Erro ao verificar atualizações:', err);
+            }
+        }
+
         async function clearLogs() {
             if (!confirm('Tem certeza que deseja limpar todos os logs?')) return;
 
             try {
-                await fetch('/monitor/clear', { method: 'POST' });
-                refreshData();
+                const res = await fetch('/monitor/clear', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    lastHash = ''; // Reset hash para forçar atualização
+                    refreshData();
+                } else {
+                    alert('Erro ao limpar logs');
+                }
             } catch (err) {
                 console.error('Erro ao limpar logs:', err);
+                alert('Erro ao limpar logs');
             }
         }
 
         function startAutoRefresh() {
-            refreshInterval = setInterval(() => {
-                countdown--;
-                document.getElementById('countdown').textContent = countdown;
-
-                if (countdown <= 0) {
-                    countdown = 30;
-                    refreshData();
-                }
-            }, 1000);
+            // Verifica mudanças a cada 2 segundos (leve - só checa tamanho do arquivo)
+            checkInterval = setInterval(checkForUpdates, 2000);
         }
 
         // Init

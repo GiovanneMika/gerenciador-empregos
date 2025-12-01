@@ -407,13 +407,26 @@ class JobController extends Controller
             $filters['state'] = strtoupper($filters['state']);
         }
 
+        // Valida min > max antes de tudo
+        $salaryMin = data_get($filters, 'salary_range.min');
+        $salaryMax = data_get($filters, 'salary_range.max');
+        
+        if (is_numeric($salaryMin) && is_numeric($salaryMax) && (float) $salaryMin > (float) $salaryMax) {
+            // Cria um validator que já falha com a mensagem de erro
+            return Validator::make(
+                ['salary_range' => ['min' => $salaryMin, 'max' => $salaryMax]],
+                ['salary_range.max' => 'gte:salary_range.min'],
+                ['salary_range.max.gte' => 'O salário máximo deve ser maior ou igual ao salário mínimo.']
+            );
+        }
+
         $rules = [
             'title' => 'nullable|string|min:1|max:150',
             'area' => ['nullable', 'string', Rule::in(self::JOB_AREAS)],
             'state' => ['nullable', 'string', Rule::in(self::STATE_CODES)],
             'city' => 'nullable|string|min:1|max:150',
-            'salary_range.min' => 'nullable|numeric|gt:0',
-            'salary_range.max' => 'nullable|numeric|gt:0|gte:salary_range.min',
+            'salary_range.min' => 'nullable|numeric|gte:0',
+            'salary_range.max' => 'nullable|numeric|gte:0',
         ];
 
         if ($allowCompany) {
@@ -450,11 +463,15 @@ class JobController extends Controller
         $salaryMin = data_get($filters, 'salary_range.min');
         $salaryMax = data_get($filters, 'salary_range.max');
 
-        if ($salaryMin !== null && $salaryMin !== '') {
+        // Converte para números, ignorando valores inválidos
+        $salaryMin = is_numeric($salaryMin) ? (float) $salaryMin : null;
+        $salaryMax = is_numeric($salaryMax) ? (float) $salaryMax : null;
+
+        if ($salaryMin !== null && $salaryMin > 0) {
             $query->where('salary', '>=', $salaryMin);
         }
 
-        if ($salaryMax !== null && $salaryMax !== '') {
+        if ($salaryMax !== null && $salaryMax > 0) {
             $query->where('salary', '<=', $salaryMax);
         }
 

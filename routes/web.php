@@ -12,4 +12,5 @@ Route::get('/monitor', [MonitorController::class, 'index']);
 Route::get('/monitor/logs', [MonitorController::class, 'logs']);
 Route::get('/monitor/users', [MonitorController::class, 'activeUsers']);
 Route::get('/monitor/stats', [MonitorController::class, 'stats']);
+Route::get('/monitor/check', [MonitorController::class, 'checkUpdates']);
 Route::post('/monitor/clear', [MonitorController::class, 'clearLogs']);
