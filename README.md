@@ -43,64 +43,6 @@ API RESTful desenvolvida para gerenciar usuários, empresas e vagas de emprego. 
 
 ## 🚀 Como Executar o Projeto
 
-### 📦 Opção 1: Usando Docker (Mais Simples - Recomendado)
-
-**Requisitos:**
-- Docker 20.10+
-- Docker Compose 1.29+
-
-**Passo a passo:**
-
-```powershell
-# 1. Abra PowerShell ou CMD na pasta do projeto
-cd C:\caminho\para\gerenciador-empregos
-
-# 2. Copie o arquivo de ambiente
-Copy-Item .env.example .env
-
-# 3. Crie o arquivo SQLite (banco de dados)
-New-Item -ItemType File -Path database\database.sqlite -Force
-
-# 4. Construa e inicie os containers
-docker-compose up -d --build
-
-# 5. Aguarde o build finalizar (pode levar 2-3 minutos na primeira vez)
-
-# 6. Verifique se tudo está rodando
-docker-compose ps
-
-# 7. Acesse a API
-http://localhost:8000
-```
-
-**Se ver a página "Welcome" significa que tudo está funcionando! ✅**
-
-#### Comandos Úteis do Docker
-
-```powershell
-# Ver logs em tempo real
-docker-compose logs -f app
-
-# Parar os containers (sem deletar)
-docker-compose stop
-
-# Parar e remover containers
-docker-compose down
-
-# Reiniciar os containers
-docker-compose restart
-
-# Executar comando artisan
-docker-compose exec app php artisan migrate
-
-# Executar comando artisan com bash
-docker-compose exec app bash
-```
-
----
-
-### 💻 Opção 2: Execução Manual (Sem Docker)
-
 **Requisitos:**
 - PHP 8.2 ou superior
 - Composer 2.0+
@@ -430,12 +372,7 @@ gerenciador-empregos/
 
 **Causa:** Múltiplas instâncias do servidor acessando o banco simultaneamente.
 
-**Solução Docker:**
-```powershell
-docker-compose restart
-```
-
-**Solução Manual:**
+**Solução:**
 ```powershell
 # Pressione Ctrl+C no terminal onde o servidor está rodando
 # Aguarde alguns segundos
@@ -450,11 +387,6 @@ php artisan serve --host=0.0.0.0 --port=8000
 ```powershell
 # Use outra porta
 php artisan serve --port=8001
-
-# Ou no Docker, edite docker-compose.yml:
-# Mude "8000:8000" para "8001:8000"
-docker-compose down
-docker-compose up -d --build
 ```
 
 ---
@@ -483,13 +415,15 @@ chmod 755 database/
 
 ---
 
-### ❌ Erro: "Failed to connect to Docker daemon"
+### ❌ Erro: "Permission denied" no banco de dados
 
-**Causa:** Docker não está rodando.
+**Windows:** Clique direito no arquivo `database/database.sqlite` → Propriedades → Desmarque "Somente leitura"
 
-**Solução:**
-- Windows: Abra Docker Desktop
-- Linux: `sudo systemctl start docker`
+**Linux/Mac:**
+```bash
+chmod 664 database/database.sqlite
+chmod 755 database/
+```
 
 ---
 
@@ -547,43 +481,56 @@ curl -X POST http://localhost:8000/login \
 
 **Verificação:**
 ```powershell
-# Docker está rodando?
-docker-compose ps
-
-# Se não estiver, inicie:
-docker-compose up -d --build
-
-# Manual está rodando?
-# Verifique se o terminal mostra "Server running..."
+# Servidor está rodando?
+# Verifique se o terminal mostra "Server running at..."
+# Se não, inicie:
+php artisan serve --host=0.0.0.0 --port=8000
 ```
 
 ---
 
 ### 🔧 Como Acessar os Logs
 
-**Docker:**
+#### Via View do Servidor (Recomendado)
+
+O Laravel possui uma página de monitor em tempo real que mostra logs e status do servidor:
+
+1. **Inicie o servidor:**
 ```powershell
-docker-compose logs -f app
+php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-**Manual:**
+2. **Abra o navegador e acesse o monitor:**
+```
+http://localhost:8000/monitor
+```
+
+**Você verá:**
+- Status da aplicação
+- Últimas requisições HTTP
+- Erros e exceções
+- Informações do sistema
+- Logs em tempo real
+
+---
+
+#### Via Terminal (Arquivo de Log)
+
 ```powershell
-# Os logs aparecem no terminal em tempo real
-# Se quiser ver logs salvos:
-cat storage\logs\laravel.log
+# Ver últimas 50 linhas do log
+Get-Content storage\logs\laravel.log -Tail 50
+
+# Ver logs em tempo real (Windows PowerShell 3.0+)
+Get-Content storage\logs\laravel.log -Wait
+
+# Linux/Mac - seguir logs em tempo real
+tail -f storage/logs/laravel.log
 ```
 
 ---
 
 ### 🔧 Reset Completo (Limpar Tudo)
 
-**Docker:**
-```powershell
-docker-compose down -v
-docker-compose up -d --build
-```
-
-**Manual:**
 ```powershell
 # Delete e recrie o banco
 Remove-Item database\database.sqlite -Force
@@ -897,20 +844,6 @@ Para dúvidas sobre execução do projeto:
 ---
 
 ## 🚀 Início Rápido (Resumo)
-
-### Docker (3 comandos - Windows PowerShell):
-```powershell
-Copy-Item .env.example .env
-New-Item -ItemType File -Path database\database.sqlite -Force
-docker-compose up -d --build
-```
-
-### Docker (3 comandos - Linux/Mac):
-```bash
-cp .env.example .env
-touch database/database.sqlite
-docker-compose up -d --build
-```
 
 ### Manual (6 comandos - Windows PowerShell):
 ```powershell
