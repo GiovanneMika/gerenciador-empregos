@@ -81,7 +81,7 @@ class MonitorController extends Controller
 
     public function activeUsers(): JsonResponse
     {
-        // Busca tokens válidos baseado em atividade recente (últimos 60 min)
+        // Busca tokens válidos baseado em atividade recente (últimos 30 segundos)
         $logPath = storage_path('logs/server_requests.log');
 
         $activeUsers = [];
@@ -89,7 +89,7 @@ class MonitorController extends Controller
 
         if (File::exists($logPath)) {
             $lines = array_filter(explode("\n", File::get($logPath)));
-            $cutoff = now()->subMinutes(60);
+            $cutoff = now()->subSeconds(60);
 
             foreach (array_reverse($lines) as $line) {
                 $entry = json_decode($line, true);
